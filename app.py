@@ -61,6 +61,27 @@ tts_engine = None
 scheduler = AsyncIOScheduler()
 connected_clients: List[asyncio.Queue] = []
 
+def normalize_text_for_korean_tts(text: str) -> str:
+    """숫자로 된 N교시 및 N분 단위를 올바른 한국어 한자어 수사 발음으로 교정해주는 전처리 함수"""
+    # 1. "N교시" 패턴 교정 (1교시 -> 일교시, 4교시 -> 사교시 등)
+    kyosi_map = {
+        "1교시": "일교시", "2교시": "이교시", "3교시": "삼교시", "4교시": "사교시", "5교시": "오교시",
+        "6교시": "육교시", "7교시": "칠교시", "8교시": "팔교시", "9교시": "구교시", "10교시": "십교시"
+    }
+    for k, v in kyosi_map.items():
+        text = text.replace(k, v)
+        
+    # 2. "N분" 패턴 교정 (5분 전 -> 오분 전, 1분 전 -> 일분 전 등 수량사 오류 방지)
+    minute_map = {
+        "1분": "일분", "2분": "이분", "3분": "삼분", "4분": "사분", "5분": "오분",
+        "6분": "육분", "7분": "칠분", "8분": "팔분", "9분": "구분", "10분": "십분",
+        "15분": "십오분", "20분": "이십분", "30분": "삼십분"
+    }
+    for k, v in minute_map.items():
+        text = text.replace(k, v)
+        
+    return text
+
 # 3. 데이터 모델 정의
 class ScheduleRequest(BaseModel):
     exam_name: str
@@ -273,10 +294,11 @@ def add_schedule(req: ScheduleRequest):
         audio_filename = f"{schedule_id}_{offset}.wav"
         audio_path = os.path.join(AUDIO_DIR, audio_filename)
         
-        # TTS 사전 합성
+        # TTS 사전 합성 (한국어 발음 보정 필터링 거침)
+        normalized_text = normalize_text_for_korean_tts(text)
         try:
-            logger.info(f"Pre-synthesizing TTS for offset {offset}m: '{text}'")
-            duration = tts_engine.synthesize_to_file(text, audio_path, req.voice_name)
+            logger.info(f"Pre-synthesizing TTS for offset {offset}m: '{normalized_text}'")
+            duration = tts_engine.synthesize_to_file(normalized_text, audio_path, req.voice_name)
         except Exception as e:
             logger.error(f"TTS Pre-synthesis failed for offset {offset}: {e}")
             raise HTTPException(status_code=500, detail=f"TTS 음성 합성 중 오류가 발생했습니다: {str(e)}")
@@ -368,8 +390,9 @@ async def play_now(req: Dict):
     audio_path = os.path.join(AUDIO_DIR, audio_filename)
     
     try:
-        # TTS 생성
-        tts_engine.synthesize_to_file(text, audio_path, voice_name)
+        # TTS 생성 (한국어 발음 보정)
+        normalized_text = normalize_text_for_korean_tts(text)
+        tts_engine.synthesize_to_file(normalized_text, audio_path, voice_name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"TTS 음성 합성 중 오류가 발생했습니다: {str(e)}")
 
@@ -427,7 +450,9 @@ def tts_preview(req: Dict):
     preview_path = os.path.join(AUDIO_DIR, preview_filename)
     
     try:
-        tts_engine.synthesize_to_file(text, preview_path, voice_name)
+        # 한국어 발음 보정
+        normalized_text = normalize_text_for_korean_tts(text)
+        tts_engine.synthesize_to_file(normalized_text, preview_path, voice_name)
         
         def iterfile():
             with open(preview_path, mode="rb") as file_like:
