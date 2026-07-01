@@ -1016,5 +1016,15 @@ select option {
     .time-val {
         font-size: 1.6rem;
     }
+
+    /* 로그 테이블 모바일 가로 스크롤 및 세로 글자 찌그러짐 방지 */
+    .logs-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .logs-table {
+        min-width: 580px;
+    }
 }
 
