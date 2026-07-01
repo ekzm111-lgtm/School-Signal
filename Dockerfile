@@ -23,5 +23,5 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 RUN mkdir -p /code/audio && chmod 777 /code/audio
 
 # 7. Hugging Face Spaces는 내부적으로 7860 포트를 수신하므로, 7860으로 서버 구동
-# (supertonic은 Hugging Face Hub에서 첫 실행 시 모델을 다운받으므로 가상환경 락 방지를 위해 호스트 0.0.0.0 바인딩)
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
+# (개행문자 및 인코딩으로 인한 따옴표 에러 방지를 위해 쉘 형식으로 실행)
+CMD uvicorn app:app --host 0.0.0.0 --port 7860
