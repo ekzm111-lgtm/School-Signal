@@ -1,5 +1,11 @@
-# 1. Base Image 설정 (FastAPI 및 Python 구동용 경량 리눅스)
 FROM python:3.12-slim
+
+# ONNX Runtime 및 OpenMP 스레드 폭발 방지 (CPU 컨텐션 해결용 성능 극대화 설정)
+ENV OMP_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+ENV OPENBLAS_NUM_THREADS=1
+ENV VECLIB_MAXIMUM_THREADS=1
+ENV NUMEXPR_NUM_THREADS=1
 
 # 2. 필수 시스템 패키지 설치
 # (오디오 복원을 위한 libsndfile1 및 깃허브 최신 소스 코드 클론을 위한 git 설치)
