@@ -79,11 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('enable-broadcast-toggle');
     const hostname = window.location.hostname;
     
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        toggle.checked = true;
-    } else {
-        toggle.checked = false;
-    }
+    // 접속 기기와 관계없이 모바일에서도 기본적으로 송출 스피커 수신을 활성화합니다.
+    toggle.checked = true;
     
     initSSE();
     
