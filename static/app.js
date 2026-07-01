@@ -95,6 +95,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // 화면 꺼짐 방지(Wake Lock) 전역 변수
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Screen Wake Lock activated.');
+            }
+        } catch (err) {
+            console.warn('Wake Lock request failed:', err);
+        }
+    }
+
     document.body.addEventListener('click', () => {
         if (toggle.checked && !window.audioUnlocked) {
             window.audioUnlocked = true;
@@ -106,20 +120,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.resume();
                 }
                 
-                // 2. HTML5 Audio 락 해제: 동기적 터치 시점에 무음(Base64) 오디오를 강제 재생시켜 락을 해제합니다.
-                // 이 락 해제된 전역 오디오 객체를 나중에 비동기(SSE) 이벤트 수신 시 재사용하면 모바일에서도 소리가 즉각 잘 납니다.
+                // 2. HTML5 Audio 락 해제
                 window.globalAudioPlayer.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAAA";
                 window.globalAudioPlayer.play().then(() => {
                     window.globalAudioPlayer.pause();
                     console.log("Global audio player unlocked for mobile devices.");
                 }).catch(e => console.error("Audio unlock play failed:", e));
                 
+                // 3. 화면 꺼짐 방지 활성화 (Wake Lock)
+                requestWakeLock();
+                
             } catch (err) {
                 console.error("Audio unlock error:", err);
             }
-            showToast('소리 재생 권한이 활성화되었습니다.', 'success');
+            showToast('소리 재생 권한 및 화면 켜짐이 유지됩니다.', 'success');
         }
     }, { once: true });
+
+    // 화면 복귀 시 꺼짐 방지 락 재요청
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') {
+            await requestWakeLock();
+        }
+    });
 });
 
 // Toast System
