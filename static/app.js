@@ -3,6 +3,8 @@ let voices = [];
 let schedules = [];
 let activeTimer = null;
 let nextBroadcastJob = null;
+// 모바일 기기(아이폰, 갤럭시 등)의 비동기 오디오 자동 재생 차단 해제용 전역 객체
+window.globalAudioPlayer = new Audio();
 
 // DOM Elements
 const currentTimeEl = document.getElementById('current-time');
@@ -97,20 +99,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (toggle.checked && !window.audioUnlocked) {
             window.audioUnlocked = true;
             try {
-                // Web Audio API를 활용해 실제 소리를 단기간 냄으로써 크롬의 오토플레이 제한을 강제로 완전히 풉니다.
+                // 1. Web Audio API 락 해제
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (AudioContext) {
                     const ctx = new AudioContext();
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    gain.gain.setValueAtTime(0.001, ctx.currentTime); // 귀에 안 들릴 정도의 초미세음량
-                    osc.start(0);
-                    osc.stop(ctx.currentTime + 0.05);
                     ctx.resume();
-                    console.log("AudioContext unlocked via Web Audio API");
                 }
+                
+                // 2. HTML5 Audio 락 해제: 동기적 터치 시점에 무음(Base64) 오디오를 강제 재생시켜 락을 해제합니다.
+                // 이 락 해제된 전역 오디오 객체를 나중에 비동기(SSE) 이벤트 수신 시 재사용하면 모바일에서도 소리가 즉각 잘 납니다.
+                window.globalAudioPlayer.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAAA";
+                window.globalAudioPlayer.play().then(() => {
+                    window.globalAudioPlayer.pause();
+                    console.log("Global audio player unlocked for mobile devices.");
+                }).catch(e => console.error("Audio unlock play failed:", e));
+                
             } catch (err) {
                 console.error("Audio unlock error:", err);
             }
@@ -647,11 +650,22 @@ function updateSpeakerStatus() {
 }
 
 function playAudioFromSignal(audioUrl, text) {
-    const audio = new Audio(audioUrl);
-    audio.play().then(() => {
+    if (!window.globalAudioPlayer) {
+        window.globalAudioPlayer = new Audio();
+    }
+    
+    // [중요] 새로 인스턴스를 만들지 않고, 최초 터치 시 락이 완전히 풀린 전역 플레이어의 소스만 바꿔서 재생합니다.
+    // 이렇게 해야 iOS 사파리나 안드로이드 크롬 등 모바일 환경에서도 오토플레이 제한에 걸리지 않고 소리가 나옵니다.
+    window.globalAudioPlayer.src = audioUrl;
+    window.globalAudioPlayer.play().then(() => {
         showToast(`안내 방송 송출 시작: ${text.substring(0, 20)}...`, 'success');
     }).catch(err => {
-        console.error("Browser audio play blocked:", err);
-        showToast('브라우저 오디오 재생이 차단되었습니다. 화면을 클릭해 활성화해 주세요!', 'error');
+        console.error("Browser audio play blocked on global player, trying fallback:", err);
+        
+        // 폴백 수단: 일반적인 재생 시도
+        const audioFallback = new Audio(audioUrl);
+        audioFallback.play().catch(e => console.error("Fallback play failed:", e));
+        
+        showToast('오디오 재생이 차단되었습니다. 화면의 빈 공간을 다시 한번 터치해 주세요!', 'error');
     });
 }
