@@ -1,3 +1,12 @@
+---
+title: Anauns
+emoji: 🗣️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # 🏫 시험 시간 안내 자동 송출 시스템 (Supertonic Broadcast)
 
 본 시스템은 하이브 수퍼톤(Supertone)의 초경량 온디바이스 TTS 모델인 **Supertonic**을 활용하여, 학교 시험 도중 종료 N분 전 및 종료 시각에 맞춰 안내 방송을 로컬 스피커로 자동 송출해 주는 통합 제어 시스템입니다.

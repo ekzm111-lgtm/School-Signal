@@ -265,9 +265,9 @@ def add_schedule(req: ScheduleRequest):
             text = custom_text.strip()
         else:
             if offset > 0:
-                text = f"아 아, 시험 종료 안내 말씀 드립니다. 잠시 후 {req.exam_name} 시험 종료 {offset}분 전입니다. 수험생 여러분께서는 답안 마킹을 다시 한번 확인하시기 바랍니다."
+                text = f"시험 종료 안내 말씀 드립니다. 잠시 후 {req.exam_name} 시험 종료 {offset}분 전입니다. 수험생 여러분께서는 답안 마킹을 다시 한번 확인하시기 바랍니다."
             else:
-                text = f"아 아, 시험 종료 안내 말씀 드립니다. {req.exam_name} 시험 시간이 모두 종료되었습니다. 수험생 여러분께서는 필기도구를 내려놓으시고 답안지를 제출해 주시기 바랍니다."
+                text = f"시험 종료 안내 말씀 드립니다. {req.exam_name} 시험 시간이 모두 종료되었습니다. 수험생 여러분께서는 필기도구를 내려놓으시고 답안지를 제출해 주시기 바랍니다."
 
         broadcast_id = str(uuid.uuid4())
         audio_filename = f"{schedule_id}_{offset}.wav"
