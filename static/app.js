@@ -74,6 +74,36 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('preview-btn').addEventListener('click', handlePreview);
     document.getElementById('play-now-btn').addEventListener('click', handlePlayNow);
+
+    // 스피커 송출 제어 토글 및 SSE 연동
+    const toggle = document.getElementById('enable-broadcast-toggle');
+    const hostname = window.location.hostname;
+    
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        toggle.checked = true;
+    } else {
+        toggle.checked = false;
+    }
+    
+    initSSE();
+    
+    toggle.addEventListener('change', () => {
+        updateSpeakerStatus();
+        if (toggle.checked) {
+            showToast('방송 송출 수신이 활성화되었습니다. 브라우저 보안 정책상 화면의 아무 곳이나 한 번 클릭해 주세요!', 'info');
+        } else {
+            showToast('이 화면에서의 방송 송출 수신을 비활성화했습니다.', 'info');
+        }
+    });
+
+    document.body.addEventListener('click', () => {
+        if (toggle.checked && !window.audioUnlocked) {
+            window.audioUnlocked = true;
+            const dummy = new Audio();
+            dummy.play().catch(()=>{});
+            showToast('소리 재생 권한이 활성화되었습니다.', 'success');
+        }
+    }, { once: true });
 });
 
 // Toast System
@@ -545,4 +575,70 @@ async function handlePlayNow() {
         playBtn.disabled = false;
         playBtn.innerHTML = originalHTML;
     }
+}
+
+// ==========================================
+// 웹 브라우저 실시간 방송 수신 및 재생 시스템 (SSE)
+// ==========================================
+let eventSource = null;
+
+function initSSE() {
+    if (eventSource) {
+        eventSource.close();
+    }
+
+    eventSource = new EventSource('/api/stream');
+    
+    eventSource.onopen = () => {
+        console.log("SSE connected.");
+        updateSpeakerStatus();
+    };
+    
+    eventSource.onerror = (e) => {
+        console.error("SSE error, reconnecting...", e);
+        const statusTitle = document.getElementById('speaker-status-title');
+        statusTitle.innerHTML = '<i class="fa-solid fa-volume-xmark status-icon"></i> 방송 송출 대기 오프라인';
+        statusTitle.className = 'status-disconnected';
+    };
+    
+    eventSource.addEventListener('play', (event) => {
+        const data = JSON.parse(event.data);
+        console.log("Received play signal:", data);
+        
+        const toggle = document.getElementById('enable-broadcast-toggle');
+        if (toggle.checked) {
+            playAudioFromSignal(data.audio_url, data.text);
+            setTimeout(refreshAll, 1000);
+        } else {
+            console.log("Play signal ignored: Speaker toggle is OFF.");
+        }
+    });
+}
+
+function updateSpeakerStatus() {
+    const toggle = document.getElementById('enable-broadcast-toggle');
+    const statusTitle = document.getElementById('speaker-status-title');
+    
+    if (toggle.checked) {
+        if (eventSource && eventSource.readyState === EventSource.OPEN) {
+            statusTitle.innerHTML = '<i class="fa-solid fa-volume-high status-icon"></i> 방송 송출 수신 대기 중 (온라인)';
+            statusTitle.className = 'status-connected';
+        } else {
+            statusTitle.innerHTML = '<i class="fa-solid fa-spinner fa-spin status-icon"></i> 송출 대기 중 연결 시도...';
+            statusTitle.className = 'status-disconnected';
+        }
+    } else {
+        statusTitle.innerHTML = '<i class="fa-solid fa-volume-xmark status-icon"></i> 방송 송출 비활성화됨';
+        statusTitle.className = 'status-disconnected';
+    }
+}
+
+function playAudioFromSignal(audioUrl, text) {
+    const audio = new Audio(audioUrl);
+    audio.play().then(() => {
+        showToast(`안내 방송 송출 시작: ${text.substring(0, 20)}...`, 'success');
+    }).catch(err => {
+        console.error("Browser audio play blocked:", err);
+        showToast('브라우저 오디오 재생이 차단되었습니다. 화면을 클릭해 활성화해 주세요!', 'error');
+    });
 }
