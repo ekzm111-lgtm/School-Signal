@@ -75,6 +75,22 @@
                 <section class="dashboard-card form-card">
                     <h2 class="card-title"><i class="fa-solid fa-calendar-plus"></i> 시험 일정 등록</h2>
                     <form id="schedule-form" class="app-form">
+                        <div class="form-group">
+                            <label for="quick-time-select" style="color: var(--accent); font-weight: 600;">
+                                <i class="fa-solid fa-bolt"></i> 일과 시정표 빠른 선택
+                            </label>
+                            <select id="quick-time-select">
+                                <option value="">-- 교시 선택 시 시험명과 시간이 자동 입력됩니다 --</option>
+                                <option value="09:35" data-name="1교시">1교시 (08:50 ~ 09:35)</option>
+                                <option value="10:30" data-name="2교시">2교시 (09:45 ~ 10:30)</option>
+                                <option value="11:25" data-name="3교시">3교시 (10:40 ~ 11:25)</option>
+                                <option value="12:20" data-name="4교시">4교시 (11:35 ~ 12:20)</option>
+                                <option value="14:05" data-name="5교시">5교시 (13:20 ~ 14:05)</option>
+                                <option value="15:00" data-name="6교시">6교시 (14:15 ~ 15:00)</option>
+                                <option value="15:55" data-name="7교시">7교시 (15:10 ~ 15:55)</option>
+                            </select>
+                        </div>
+
                         <div class="form-row flex-row">
                             <div class="form-group flex-1">
                                 <label for="exam-name">시험 과목명</label>

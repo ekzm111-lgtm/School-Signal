@@ -42,6 +42,33 @@ document.addEventListener('DOMContentLoaded', () => {
     scheduleForm.addEventListener('submit', handleScheduleSubmit);
     toggleTemplatesBtn.addEventListener('click', toggleTemplatesAccordion);
     
+    // Quick time select listener
+    const quickTimeSelect = document.getElementById('quick-time-select');
+    quickTimeSelect.addEventListener('change', (e) => {
+        const selectedOpt = e.target.selectedOptions[0];
+        if (!selectedOpt || !selectedOpt.value) return;
+        
+        const name = selectedOpt.getAttribute('data-name');
+        const time = selectedOpt.value;
+        
+        const examNameInput = document.getElementById('exam-name');
+        const endTimeInput = document.getElementById('end-time');
+        
+        const currentVal = examNameInput.value.trim();
+        // 앞부분의 'N교시' 패턴이 있으면 제거하고 뒤의 과목명만 추출
+        const cleanNameMatch = currentVal.match(/^[1-7]교시\s*(.*)$/);
+        const pureSubject = cleanNameMatch ? cleanNameMatch[1] : currentVal;
+        
+        if (pureSubject) {
+            examNameInput.value = `${name} ${pureSubject}`;
+        } else {
+            examNameInput.value = `${name} `;
+        }
+        
+        endTimeInput.value = time;
+        examNameInput.focus();
+    });
+    
     document.getElementById('refresh-schedule-btn').addEventListener('click', loadSchedules);
     document.getElementById('refresh-logs-btn').addEventListener('click', loadLogs);
     
