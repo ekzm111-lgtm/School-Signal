@@ -7,11 +7,15 @@ ENV OPENBLAS_NUM_THREADS=1
 ENV VECLIB_MAXIMUM_THREADS=1
 ENV NUMEXPR_NUM_THREADS=1
 
-# 2. 필수 시스템 패키지 설치
-# (오디오 복원을 위한 libsndfile1 및 깃허브 최신 소스 코드 클론을 위한 git 설치)
+# 시스템 타임존을 한국 표준시(Asia/Seoul)로 강제 고정하여 시간 어긋남 버그 해결
+ENV TZ=Asia/Seoul
+
+# 2. 필수 시스템 패키지 설치 (libsndfile1, git, tzdata 설치)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 \
     git \
+    tzdata \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
     && rm -rf /var/lib/apt/lists/*
 
 # 3. 작업 디렉토리 설정
