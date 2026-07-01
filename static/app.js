@@ -99,8 +99,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('click', () => {
         if (toggle.checked && !window.audioUnlocked) {
             window.audioUnlocked = true;
-            const dummy = new Audio();
-            dummy.play().catch(()=>{});
+            try {
+                // Web Audio API를 활용해 실제 소리를 단기간 냄으로써 크롬의 오토플레이 제한을 강제로 완전히 풉니다.
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    const ctx = new AudioContext();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    gain.gain.setValueAtTime(0.001, ctx.currentTime); // 귀에 안 들릴 정도의 초미세음량
+                    osc.start(0);
+                    osc.stop(ctx.currentTime + 0.05);
+                    ctx.resume();
+                    console.log("AudioContext unlocked via Web Audio API");
+                }
+            } catch (err) {
+                console.error("Audio unlock error:", err);
+            }
             showToast('소리 재생 권한이 활성화되었습니다.', 'success');
         }
     }, { once: true });
