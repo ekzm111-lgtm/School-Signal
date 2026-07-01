@@ -1,0 +1,21 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+venv/
+ENV/
+
+# System specific files
+.DS_Store
+Thumbs.db
+
+# Project specific caches and data
+audio/
+schedule.json
+test_output.wav
+immediate_*.wav
+preview_*.wav
+*.wav

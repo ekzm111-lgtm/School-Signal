@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시험 시간 안내 자동 송출 시스템</title>
+    <meta name="description" content="Supertonic TTS 기반 초경량 로컬 시험 시간 안내 자동 송출 제어판">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Local Stylesheet -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <i class="fa-solid fa-tower-broadcast logo-icon"></i>
+                <div class="logo-text">
+                    <h1>Supertonic Broadcast</h1>
+                    <span>학교 시험 안내 자동 송출 제어판</span>
+                </div>
+            </div>
+            <div class="current-time-box">
+                <div class="time-label">현재 시간</div>
+                <div id="current-time" class="time-display">00:00:00</div>
+                <div id="current-date" class="date-display">2026년 07월 01일 수요일</div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Layout -->
+        <main class="dashboard-grid">
+            <!-- Left Column: Status & Scheduler -->
+            <div class="grid-col left-col">
+                <!-- Status Panel (Next Broadcast) -->
+                <section class="dashboard-card status-card">
+                    <h2 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> 실시간 모니터링</h2>
+                    <div class="next-broadcast-container">
+                        <div id="next-timer-box" class="countdown-circle-container">
+                            <svg class="countdown-svg" viewBox="0 0 100 100">
+                                <circle class="countdown-track" cx="50" cy="50" r="45"></circle>
+                                <circle id="countdown-progress" class="countdown-progress" cx="50" cy="50" r="45"></circle>
+                            </svg>
+                            <div class="countdown-content">
+                                <span class="countdown-label">다음 방송까지</span>
+                                <span id="countdown-timer" class="countdown-time">--:--:--</span>
+                            </div>
+                        </div>
+                        <div class="next-broadcast-details">
+                            <div class="detail-row">
+                                <span class="label">다음 시험</span>
+                                <span id="next-exam-name" class="val">-</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">송출 시점</span>
+                                <span id="next-broadcast-time" class="val">-</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">안내 내용</span>
+                                <span id="next-broadcast-text" class="val text-ellipsis">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- New Schedule Setup -->
+                <section class="dashboard-card form-card">
+                    <h2 class="card-title"><i class="fa-solid fa-calendar-plus"></i> 시험 일정 등록</h2>
+                    <form id="schedule-form" class="app-form">
+                        <div class="form-row flex-row">
+                            <div class="form-group flex-1">
+                                <label for="exam-name">시험 과목명</label>
+                                <input type="text" id="exam-name" placeholder="예: 1교시 국어" required>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label for="end-time">시험 종료 시각</label>
+                                <input type="time" id="end-time" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>송출 시점 선택</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-btn">
+                                    <input type="checkbox" name="offsets" value="10" checked>
+                                    <span>10분 전</span>
+                                </label>
+                                <label class="checkbox-btn">
+                                    <input type="checkbox" name="offsets" value="5" checked>
+                                    <span>5분 전</span>
+                                </label>
+                                <label class="checkbox-btn">
+                                    <input type="checkbox" name="offsets" value="1" checked>
+                                    <span>1분 전</span>
+                                </label>
+                                <label class="checkbox-btn">
+                                    <input type="checkbox" name="offsets" value="0" checked>
+                                    <span>종료 시점</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="voice-select">목소리 스타일</label>
+                            <select id="voice-select">
+                                <!-- Loaded dynamically via API -->
+                            </select>
+                        </div>
+
+                        <!-- Accordion for customizing templates -->
+                        <div class="form-accordion">
+                            <button type="button" id="toggle-templates-btn" class="accordion-header">
+                                <span><i class="fa-solid fa-gears"></i> 멘트 개별 설정 (선택사항)</span>
+                                <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                            </button>
+                            <div id="templates-content" class="accordion-content">
+                                <div class="form-group">
+                                    <label for="template-10">10분 전 멘트</label>
+                                    <textarea id="template-10" rows="2" placeholder="미입력 시 기본 템플릿 사용"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="template-5">5분 전 멘트</label>
+                                    <textarea id="template-5" rows="2" placeholder="미입력 시 기본 템플릿 사용"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="template-1">1분 전 멘트</label>
+                                    <textarea id="template-1" rows="2" placeholder="미입력 시 기본 템플릿 사용"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="template-0">종료 시점 멘트</label>
+                                    <textarea id="template-0" rows="2" placeholder="미입력 시 기본 템플릿 사용"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="submit-schedule-btn" class="btn btn-primary btn-block">
+                            <i class="fa-solid fa-bell"></i> 방송 일정 예약 등록
+                        </button>
+                    </form>
+                </section>
+            </div>
+
+            <!-- Right Column: Schedule List & Instant Broadcast -->
+            <div class="grid-col right-col">
+                <!-- Instant Manual Broadcast -->
+                <section class="dashboard-card manual-card">
+                    <h2 class="card-title"><i class="fa-solid fa-bullhorn"></i> 즉시 마이크 방송 (수동 송출)</h2>
+                    <div class="manual-broadcast-area">
+                        <textarea id="manual-text" rows="3" placeholder="여기에 실시간으로 방송할 텍스트를 입력해 주세요. 로컬 TTS가 즉시 한글 음성을 합성하여 스피커로 재생합니다."></textarea>
+                        <div class="manual-actions">
+                            <div class="voice-picker-inline">
+                                <label for="manual-voice-select">목소리</label>
+                                <select id="manual-voice-select">
+                                    <!-- Loaded dynamically -->
+                                </select>
+                            </div>
+                            <div class="button-group">
+                                <button type="button" id="preview-btn" class="btn btn-secondary">
+                                    <i class="fa-solid fa-volume-high"></i> 미리듣기
+                                </button>
+                                <button type="button" id="play-now-btn" class="btn btn-accent">
+                                    <i class="fa-solid fa-play"></i> 즉시 송출
+                                </button>
+                            </div>
+                        </div>
+                        <audio id="preview-audio" style="display:none;"></audio>
+                    </div>
+                </section>
+
+                <!-- Current Schedules Timeline -->
+                <section class="dashboard-card list-card">
+                    <div class="card-header-actions">
+                        <h2 class="card-title"><i class="fa-solid fa-list-check"></i> 오늘 예정된 방송 목록</h2>
+                        <button id="refresh-schedule-btn" class="btn btn-icon" title="새로고침"><i class="fa-solid fa-rotate"></i></button>
+                    </div>
+                    <div class="schedule-timeline-container">
+                        <div id="schedule-list" class="schedule-list-container">
+                            <!-- Loaded dynamically -->
+                            <div class="empty-state">
+                                <i class="fa-solid fa-calendar-xmark empty-icon"></i>
+                                <p>등록된 시험 방송 일정이 없습니다.</p>
+                                <span>위 폼을 작성해 첫 시험 일정을 등록해 보세요.</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Audio Broadcast Logs -->
+                <section class="dashboard-card logs-card">
+                    <div class="card-header-actions">
+                        <h2 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> 송출 기록 로그</h2>
+                        <button id="refresh-logs-btn" class="btn btn-icon" title="로그 새로고침"><i class="fa-solid fa-rotate"></i></button>
+                    </div>
+                    <div class="logs-container">
+                        <table class="logs-table">
+                            <thead>
+                                <tr>
+                                    <th>시간</th>
+                                    <th>시험명</th>
+                                    <th>분류</th>
+                                    <th>송출 텍스트</th>
+                                    <th>상태</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-tbody">
+                                <!-- Loaded dynamically -->
+                                <tr>
+                                    <td colspan="5" class="empty-row">송출 기록이 존재하지 않습니다.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Alert Modal / Toast Notification System -->
+    <div id="toast" class="toast-notification">
+        <i class="toast-icon fa-solid fa-circle-info"></i>
+        <span id="toast-message" class="toast-message">메시지 내용</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
